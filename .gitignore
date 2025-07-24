@@ -1,0 +1,4 @@
+/.gptree_config
+/Cargo.lock
+/gptree_output.txt
+/target

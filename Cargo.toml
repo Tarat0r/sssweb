@@ -1,0 +1,7 @@
+[workspace]
+members = [
+    "sssweb",
+    "shamir-gf256"
+]
+
+resolver = "3" 
