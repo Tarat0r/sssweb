@@ -9,10 +9,21 @@
 
 use rand::random;
 use std::fmt;
+use zeroize::{Zeroize, ZeroizeOnDrop};
+
+pub mod share_codec;
+pub use share_codec::{share_from_hex, share_to_hex, ShareCodecError};
 
 /// An element of GF(256), represented as an unsigned byte.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub struct GF256(u8);
+
+// Provide Zeroize so you can call `g.zeroize()`
+impl Zeroize for GF256 {
+    fn zeroize(&mut self) {
+        self.0 = 0;
+    }
+}
 
 impl GF256 {
     /// The field’s irreducible (modulus) polynomial: x^8 + x^4 + x^3 + x + 1
@@ -95,7 +106,7 @@ impl Div for GF256 {
 }
 
 /// A share: (x, y_bytes) where x ∈ GF(256) and y_bytes is 1‑to‑1 with secret length.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq, Zeroize, ZeroizeOnDrop)]
 pub struct Share {
     pub x: GF256,
     pub y: Vec<u8>,

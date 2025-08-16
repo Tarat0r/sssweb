@@ -5,3 +5,7 @@ edition = "2024"
 
 [dependencies]
 rand = { version = "0.8.5", features = ["getrandom"] }
+hex = "0.4.3"
+thiserror="2.0.14"
+reed-solomon="0.2.1"
+zeroize = { version = "1", features = ["zeroize_derive"] }

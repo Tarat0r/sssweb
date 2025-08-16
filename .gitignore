@@ -2,3 +2,7 @@
 /Cargo.lock
 /gptree_output.txt
 /target
+sssweb/.gptree_config
+sssweb/gptree_output.txt
+shamir-gf256/gptree_output.txt
+shamir-gf256/.gptree_config
