@@ -3,7 +3,12 @@ use yew::prelude::*;
 #[function_component(Information)]
 pub fn information() -> Html {
     html! {
-        <section class="sss-guide">
+        <section class="card">
+            <div class="card-header">
+                <h2 class="card-title">{"Shamir's Secret Sharing Guide"}</h2>
+            </div>
+            
+            <div class="tab-content">
             <p>
                 <strong>{"Shamir's secret sharing:"}</strong>
                 {" Split a secret into "}
@@ -117,6 +122,7 @@ pub fn information() -> Html {
 
             <hr/>
 
-            </section>
+            </div>
+        </section>
     }
 }

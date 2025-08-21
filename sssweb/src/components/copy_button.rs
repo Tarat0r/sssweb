@@ -24,7 +24,7 @@ pub fn copy_button(props: &CopyButtonProps) -> Html {
     };
 
     html! {
-        <button {onclick}>
+        <button class="copy-btn" {onclick}>
             { if *copied { "Copied!" } else { "Copy" } }
         </button>
     }

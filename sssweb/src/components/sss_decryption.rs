@@ -18,8 +18,8 @@ pub fn sss_decryption(props: &DecryptionProps) -> Html {
 
     // Parsed shares and the reconstructed secret
     let parts: UseStateHandle<Vec<Share>> = use_state(Vec::new);
-    let result: UseStateHandle<Zeroizing<Vec<u8>>> =
-        use_state(|| Zeroizing::new(Vec::new()));    let parse_errors: UseStateHandle<Vec<String>> = use_state(Vec::new);
+    let result: UseStateHandle<Zeroizing<Vec<u8>>> = use_state(|| Zeroizing::new(Vec::new()));
+    let parse_errors: UseStateHandle<Vec<String>> = use_state(Vec::new);
 
     // Keep text in sync with the textarea
     let oninput = {
@@ -63,53 +63,72 @@ pub fn sss_decryption(props: &DecryptionProps) -> Html {
     });
 
     html! {
-        <div>
-            <h2>{ "Decryption" }</h2>
-            <p>{ "Paste your shares below — one per line." }</p>
-
-            <label for="shares">{ "Shares (one hex blob per line):" }</label>
-            <textarea
-                id="shares"
-                placeholder="Example (per line):
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">{"Decryption"}</h2>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="shares-input">{"Paste Shares (one hex blob per line)"}</label>
+                <textarea
+                    class="form-input"
+                    id="shares-input"
+                    placeholder="Example (per line):
 53485231012a00000068656c6c6f
 53485231ff0a000000736f6d657061796c6f6164"
-                rows="9"
-                style="width: 100%;"
-                value={(*shares_text).clone()}
-                oninput={oninput}
-            />
-            if shares_text.is_empty() {
-                <p>{ format!("Threshold: {}", threshold) }</p>
-            } else {}
-            <button {onclick}>{ "Reconstruct" }</button>
+                    rows="9"
+                    value={(*shares_text).clone()}
+                    oninput={oninput}
+                />
+            </div>
+
+            <div class="form-group">
+                <p class="text-secondary">{ format!("Threshold required: {}", threshold) }</p>
+                <button class="btn btn-primary" {onclick}>
+                    {"Reconstruct Secret"}
+                </button>
+            </div>
 
             {
                 if !parse_errors.is_empty() {
                     html! {
-                        <>
-                            <hr />
-                            <h3>{ "Parse errors" }</h3>
+                        <div class="status-message status-error">
+                            <h4>{"Parse Errors"}</h4>
                             <ul>
                                 { for parse_errors.iter().map(|e| html!{ <li>{ e }</li> }) }
                             </ul>
-                        </>
+                        </div>
                     }
                 } else {
                     html! {}
                 }
             }
 
-            if !result.is_empty() {
-                <div>
-                    <hr />
-                    <h3>{ "Reconstructed secret" }</h3>
-                    <p>{ format!("{}", String::from_utf8_lossy(&result)) }</p>
-                    <details>
-                        <summary>{ "View HEX" }</summary>
-                        <code>{ format!("HEX: {:02x?}", *result) }</code>
-                    </details>
-                </div>
-            } else {}
+            {
+                if !result.is_empty() {
+                    html! {
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title">{"Reconstructed Secret"}</h3>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">{"Secret Text"}</label>
+                                <div class="result-display">
+                                    { format!("{}", String::from_utf8_lossy(&result)) }
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">{"HEX Representation"}</label>
+                                <code class="result-display">
+                                    { format!("{:02x?}", *result) }
+                                </code>
+                            </div>
+                        </div>
+                    }
+                } else {
+                    html! {}
+                }
+            }
         </div>
     }
 }

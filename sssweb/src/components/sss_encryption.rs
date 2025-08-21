@@ -45,44 +45,49 @@ pub fn sss_encryption(props: &EncryptionProps) -> Html {
 
         
     html! {
-        <div>
-            <h2>{ "Encryption" }</h2>
-            <p>{ "This is the encryption component." }</p>
-            
-            <textarea
-                placeholder="Secret"
-                rows="4"
-                cols="30"
-                style="width: 100%"
-                value={(*secret_input).clone()}
-                oninput={oninput}
-            />
-            <p>{ format!("Secret: {:?}", secret_input.as_str())}</p>
-            <details>
-                <summary>{ "View HEX" }</summary>
-                <code>{ format!("HEX: {:02x?}", secret_input.as_bytes())}</code>
-            </details>
-            <button {onclick}>{ "Go!" }</button>
-            <br />
-            <br />
-            <div>
-            { (!parts.is_empty()).then(|| html! {
-                <>
-                <CopyButton text={copy_all_text.clone()} />
-                <br />
-                </>
-            })}
-
-            {
-                for copy_all_text.lines().enumerate().map(|(i, line)| html! {
-                    <>
-                    <p class="prevent-select">{ format!("Share {}: ", i + 1)}</p>
-                    <code>{ format!("{line}") }</code>
-                    <br />
-                    </>
-            })
-        }
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">{"Encryption"}</h2>
             </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="secret-input">{"Secret to Encrypt"}</label>
+                <textarea
+                    class="form-input"
+                    id="secret-input"
+                    placeholder="Enter your secret here..."
+                    rows="4"
+                    value={(*secret_input).clone()}
+                    oninput={oninput}
+                />
+            </div>
+
+            <div class="form-group">
+                <button class="btn btn-primary" {onclick}>
+                    {"Generate Shares"}
+                </button>
+            </div>
+
+            { (!parts.is_empty()).then(|| html! {
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">{"Generated Shares"}</h3>
+                    </div>
+                    <div class="form-group">
+                        <CopyButton text={copy_all_text.clone()} />
+                    </div>
+                    <div class="form-group">
+                        {
+                            for copy_all_text.lines().enumerate().map(|(i, line)| html! {
+                                <div class="share-item">
+                                    <p class="share-label">{ format!("Share {}:", i + 1)}</p>
+                                    <code class="result-display">{ format!("{line}") }</code>
+                                </div>
+                            })
+                        }
+                    </div>
+                </div>
+            })}
         </div>
     }
 }
