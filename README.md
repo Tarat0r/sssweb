@@ -17,6 +17,7 @@ A small Rust **workspace** containing:
 - `Zeroize` on sensitive types (`Share`) to reduce memory remanence risk.
 - Yew + `wasm-bindgen` browser UI (served by Trunk) to play with SSS.
 - Helpful unit tests and `Display` impls for debugging.
+- Reed–Solomon–compatible layout (shares are polynomial evaluations over GF(256)); see notes on error correction below.
 
 ---
 
@@ -25,17 +26,32 @@ A small Rust **workspace** containing:
 ```bash
 .
 ├── Cargo.toml
+├── .github/workflows
+│       └── ci.yaml
+├── .gitignore
 ├── README.md
 ├── shamir-gf256
-│   ├── Cargo.toml
-│   └── src
-│       └── lib.rs
+│   ├── Cargo.toml
+│   └── src
+│       ├── lib.rs
+│       └── share_codec.rs
 └── sssweb
     ├── Cargo.toml
-    ├── dist/              # Built static assets (output of `trunk build`)
-    ├── index.html         # Trunk entry-point
-    └── src
-        └── main.rs
+    ├── dist
+    ├── index.html
+    ├── src
+    │   ├── components
+    │   │   ├── copy_button.rs
+    │   │   ├── information.rs
+    │   │   ├── mod.rs
+    │   │   ├── sss_decryption.rs
+    │   │   ├── sss_encryption.rs
+    │   │   └── tab_menu.rs
+    │   └── main.rs
+    └── style.css
+
+9 directories, 21 files
+
 ```
 
 ---
@@ -156,6 +172,42 @@ trunk serve --open
 ### Hosting the built app
 
 Any static host works. After `trunk build --release`, upload the contents of `sssweb/dist/` to your host (Netlify, GitHub Pages, S3, a simple Nginx, …).
+
+---
+
+## 🧩 Reed–Solomon / error correction
+
+Shamir’s Secret Sharing evaluates a random degree-k-1 polynomial over GF(256) at distinct x points. That is a systematic Reed–Solomon (RS) codeword structure with parameters RS(n = share_count, k = threshold).
+This means you can, in principle, correct corrupted shares (errors) or recover from missing ones (erasures) using standard RS decoders.
+
+**Current status:** this repository’s reconstruct expects exact shares and does not ship an RS decoder yet (e.g., Berlekamp–Welch/Sugiyama–Berlekamp–Massey + Forney). Contributions welcome.
+
+### What error/erasure budgets look like
+
+If you create n shares with threshold k, classical RS bounds give:
+
+- Up to t errors and e erasures provided 2t + e ≤ n - k.
+- Special cases:
+  - Only erasures (known-missing or flagged-bad): recover if e ≤ n - k.
+  - Only errors (unknown-bad shares): correct if t ≤ ⌊(n - k)/2⌋.
+
+**Example:** k = 3, n = 7 ⇒ n - k = 4.
+You can correct 2 errors, or 4 erasures, or mixes like 1 error + 2 erasures.
+
+### How it would integrate here
+
+- Each secret byte position is an independent RS(n, k) symbol stream over GF(256).
+- We already fix x = 1..=n (as GF(256) elements), which is standard for RS decoding.
+- An RS decoder would run per-byte across the selected shares and output the polynomial’s value at x=0 (the secret byte).
+
+### Authenticity vs. robustness
+
+RS decoding gives robustness to random noise or a few malicious shares within bounds. It does not authenticate shares. For adversarial settings use a MAC (e.g., compute a MAC of the secret and share it too) or a verifiable secret sharing (VSS) scheme/commitments.
+
+### Practical tips (until RS is implemented)
+
+- Generate some redundancy: pick n > k so you can discard a few bad/missing shares.
+- Add integrity checks to each share payload (e.g., length + CRC32/Blake3 hash) to detect corruption early.
 
 ---
 

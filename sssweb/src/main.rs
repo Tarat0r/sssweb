@@ -10,9 +10,9 @@ fn app() -> Html {
                 <h1>{ "🔐 Shamir's Secret Sharing" }</h1>
                 <p>{ "This is a demo of Shamir's Secret Sharing over GF(256)" }</p>
                 <div class="header-features">
-                    <span class="feature-badge">{"🔒 Secure"}</span>
-                    <span class="feature-badge">{"⚡ Fast"}</span>
-                    <span class="feature-badge">{"🌐 Web-based"}</span>
+                    <span class="feature-badge">{"🦀 Rust + WASM (Yew)"}</span>
+                    <span class="feature-badge">{"🔧 Reed-Solomon ECC"}</span>
+                    <span class="feature-badge">{"🖥️ Client-side only"}</span>
                 </div>
             </div>
             <TabMenu />
