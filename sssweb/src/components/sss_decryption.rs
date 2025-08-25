@@ -1,8 +1,8 @@
-use yew::prelude::*;
 use yew::UseStateHandle;
-use zeroize::{Zeroizing};
+use yew::prelude::*;
+use zeroize::Zeroizing;
 
-use shamir_gf256::{share_from_hex, reconstruct, Share};
+use shamir_gf256::{Share, reconstruct, share_from_hex};
 
 #[derive(Properties, PartialEq)]
 pub struct DecryptionProps {
@@ -43,7 +43,9 @@ pub fn sss_decryption(props: &DecryptionProps) -> Html {
 
         for (idx, line) in shares_text_closure.lines().enumerate() {
             let l = line.trim();
-            if l.is_empty() { continue; }
+            if l.is_empty() {
+                continue;
+            }
             match share_from_hex(l) {
                 Ok(sh) => parsed.push(sh),
                 Err(e) => errors.push(format!("Line {}: {}", idx + 1, e)),
@@ -63,72 +65,78 @@ pub fn sss_decryption(props: &DecryptionProps) -> Html {
     });
 
     html! {
-        <div class="card">
-            <div class="card-header">
-                <h2 class="card-title">{"Decryption"}</h2>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="shares-input">{"Paste Shares (one hex blob per line)"}</label>
-                <textarea
-                    class="form-input"
-                    id="shares-input"
-                    placeholder="Example (per line):
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">{"Decryption"}</h2>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="shares-input">{"Paste Shares (one hex blob per line)"}</label>
+                    <textarea
+                        class="form-input"
+                        id="shares-input"
+                        placeholder="Example (per line):
 53485231012a00000068656c6c6f
 53485231ff0a000000736f6d657061796c6f6164"
-                    rows="9"
-                    value={(*shares_text).clone()}
-                    oninput={oninput}
-                />
-            </div>
+                        rows="9"
+                        value={(*shares_text).clone()}
+                        oninput={oninput}
+                    />
+                </div>
 
-            <div class="form-group">
-                <p class="text-secondary">{ format!("Threshold required: {}", threshold) }</p>
-                <button class="btn btn-primary" {onclick}>
-                    {"Reconstruct Secret"}
-                </button>
-            </div>
+                <div class="form-group">
+                    <p class="text-secondary">{ format!("Threshold required: {}", threshold) }</p>
+                    <button class="btn btn-primary" {onclick}>
+                        {"Reconstruct Secret"}
+                    </button>
+                </div>
 
-            {
-                if !parse_errors.is_empty() {
-                    html! {
-                        <div class="status-message status-error">
-                            <h4>{"Parse Errors"}</h4>
-                            <ul>
-                                { for parse_errors.iter().map(|e| html!{ <li>{ e }</li> }) }
-                            </ul>
-                        </div>
-                    }
-                } else {
-                    html! {}
-                }
-            }
-
-            {
-                if !result.is_empty() {
-                    html! {
-                        <div class="card">
-                            <div class="card-header">
-                                <h3 class="card-title">{"Reconstructed Secret"}</h3>
+                {
+                    if !parse_errors.is_empty() {
+                        html! {
+                            <div class="status-message status-error">
+                                <h4>{"Parse Errors"}</h4>
+                                <ul>
+                                    { for parse_errors.iter().map(|e| html!{ <li>{ e }</li> }) }
+                                </ul>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">{"Secret Text"}</label>
-                                <div class="result-display">
-                                    { format!("{}", String::from_utf8_lossy(&result)) }
+                        }
+                    } else {
+                        html! {}
+                    }
+                }
+
+                {
+                    if !result.is_empty() {
+                        html! {
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">{"Reconstructed Secret"}</h3>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">{"Secret Text"}</label>
+                                    <div class="result-display">
+                                        { format!("{}", String::from_utf8_lossy(&result)) }
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">{"HEX Representation"}</label>
+                                    <code class="result-display">
+                                        { { format!("[{}]",
+        result.iter()
+              .map(|b| format!("{b:02x}"))
+              .collect::<Vec<_>>()
+              .join(", ")
+    ) }
+     }
+                                    </code>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label class="form-label">{"HEX Representation"}</label>
-                                <code class="result-display">
-                                    { format!("{:02x?}", *result) }
-                                </code>
-                            </div>
-                        </div>
+                        }
+                    } else {
+                        html! {}
                     }
-                } else {
-                    html! {}
                 }
-            }
-        </div>
-    }
+            </div>
+        }
 }

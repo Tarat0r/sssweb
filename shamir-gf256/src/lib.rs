@@ -12,7 +12,7 @@ use std::fmt;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
 pub mod share_codec;
-pub use share_codec::{share_from_hex, share_to_hex, ShareCodecError};
+pub use share_codec::{ShareCodecError, share_from_hex, share_to_hex};
 
 /// An element of GF(256), represented as an unsigned byte.
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
@@ -82,27 +82,35 @@ impl GF256 {
 }
 
 /// Convenience traits for +, -, *, / operators.
-use core::ops::{Add, Mul, Sub, Div};
+use core::ops::{Add, Div, Mul, Sub};
 
 impl Add for GF256 {
     type Output = GF256;
     #[inline(always)]
-    fn add(self, rhs: Self) -> Self::Output { self.add_internal(rhs) }
+    fn add(self, rhs: Self) -> Self::Output {
+        self.add_internal(rhs)
+    }
 }
 impl Sub for GF256 {
     type Output = GF256;
     #[inline(always)]
-    fn sub(self, rhs: Self) -> Self::Output { self.add_internal(rhs) } // same as addition
+    fn sub(self, rhs: Self) -> Self::Output {
+        self.add_internal(rhs)
+    } // same as addition
 }
 impl Mul for GF256 {
     type Output = GF256;
     #[inline(always)]
-    fn mul(self, rhs: Self) -> Self::Output { self.mul_internal(rhs) }
+    fn mul(self, rhs: Self) -> Self::Output {
+        self.mul_internal(rhs)
+    }
 }
 impl Div for GF256 {
     type Output = GF256;
     #[inline(always)]
-    fn div(self, rhs: Self) -> Self::Output { self.mul_internal(rhs.inv()) }
+    fn div(self, rhs: Self) -> Self::Output {
+        self.mul_internal(rhs.inv())
+    }
 }
 
 /// A share: (x, y_bytes) where x ∈ GF(256) and y_bytes is 1‑to‑1 with secret length.
@@ -122,15 +130,17 @@ impl fmt::Display for Share {
 ///
 /// The secret is split byte‑wise: for every byte we build an independent random
 /// polynomial of degree `threshold‑1` with the secret byte as the free coefficient.
-pub fn split(secret: &[u8],
-            threshold: usize,
-            share_count: usize) -> Vec<Share> {
+pub fn split(secret: &[u8], threshold: usize, share_count: usize) -> Vec<Share> {
     assert!((1..=255).contains(&threshold));
     assert!(share_count >= threshold && share_count <= 255);
 
     let xs: Vec<GF256> = (1..=share_count as u8).map(GF256).collect();
-    let mut shares: Vec<Share> = xs.iter()
-        .map(|&x| Share { x, y: Vec::with_capacity(secret.len()) })
+    let mut shares: Vec<Share> = xs
+        .iter()
+        .map(|&x| Share {
+            x,
+            y: Vec::with_capacity(secret.len()),
+        })
         .collect();
 
     for &secret_byte in secret {
@@ -164,7 +174,9 @@ pub fn reconstruct(shares: &[Share], threshold: usize) -> Vec<u8> {
             let mut num = GF256::ONE;
             let mut den = GF256::ONE;
             for (j, share_j) in shares.iter().take(threshold).enumerate() {
-                if i == j { continue; }
+                if i == j {
+                    continue;
+                }
                 num = num * share_j.x;
                 den = den * (share_j.x - share_i.x);
             }
@@ -196,7 +208,7 @@ mod tests {
         let parts = split(secret, threshold, shares);
         let recovered = reconstruct(&parts, threshold);
         assert_eq!(recovered, secret);
-        
+
         println!("Secret_str: {:?}", String::from_utf8_lossy(secret));
         println!("Secret: {secret:?}");
         println!("Parts: {parts:?}");

@@ -1,5 +1,5 @@
-use yew::prelude::*;
 use web_sys::window;
+use yew::prelude::*;
 
 #[derive(Properties, PartialEq)]
 pub struct CopyButtonProps {

@@ -1,6 +1,6 @@
-use yew::prelude::*;
-use zeroize::{Zeroizing};
 use super::copy_button::CopyButton;
+use yew::prelude::*;
+use zeroize::Zeroizing;
 const ECC_LEN: usize = 16;
 
 #[derive(Properties, PartialEq)]
@@ -11,9 +11,8 @@ pub struct EncryptionProps {
 
 #[function_component(Encryption)]
 pub fn sss_encryption(props: &EncryptionProps) -> Html {
-
     let secret = use_state(|| "A".to_string());
-    let parts= use_state(Vec::new);
+    let parts = use_state(Vec::new);
     let threshold = props.threshold as usize;
     let share_count = props.share_count as usize;
 
@@ -30,26 +29,24 @@ pub fn sss_encryption(props: &EncryptionProps) -> Html {
         })
     };
 
-    let onclick =  Callback::from(move |_| {
-            let secret_bytes = Zeroizing::new(secret_closure.as_bytes().to_vec());
-            let parts_new = shamir_gf256::split(&secret_bytes, threshold, share_count);
-            parts_closure.set(parts_new);
-            
-        });
+    let onclick = Callback::from(move |_| {
+        let secret_bytes = Zeroizing::new(secret_closure.as_bytes().to_vec());
+        let parts_new = shamir_gf256::split(&secret_bytes, threshold, share_count);
+        parts_closure.set(parts_new);
+    });
 
-        let copy_all_text: String = parts
+    let copy_all_text: String = parts
         .iter()
         .map(|share| shamir_gf256::share_to_hex(share, ECC_LEN))
         .collect::<Vec<_>>()
         .join("\n");
 
-        
     html! {
         <div class="card">
             <div class="card-header">
                 <h2 class="card-title">{"Encryption"}</h2>
             </div>
-            
+
             <div class="form-group">
                 <label class="form-label" for="secret-input">{"Secret to Encrypt"}</label>
                 <textarea

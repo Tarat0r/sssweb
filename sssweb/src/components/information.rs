@@ -7,7 +7,7 @@ pub fn information() -> Html {
             <div class="card-header">
                 <h2 class="card-title">{"Shamir's Secret Sharing Guide"}</h2>
             </div>
-            
+
             <div class="tab-content">
             <p>
                 <strong>{"Shamir's secret sharing:"}</strong>

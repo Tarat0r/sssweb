@@ -12,9 +12,9 @@ Layout:
 */
 
 use crate::{GF256, Share};
+use reed_solomon::{Decoder, Encoder};
 use thiserror::Error;
-use reed_solomon::{Encoder, Decoder};
-use zeroize::{Zeroizing};
+use zeroize::Zeroizing;
 
 const MAGIC: &[u8; 4] = b"SHR1";
 
@@ -45,7 +45,7 @@ pub fn share_to_hex(share: &Share, ecc_len: usize) -> String {
 
     let y_len: u32 = share.y.len().try_into().expect("y too long");
     out.extend_from_slice(&y_len.to_le_bytes());
-    out.extend_from_slice(&code[..]);  // data + parity
+    out.extend_from_slice(&code[..]); // data + parity
 
     hex::encode(out)
 }
@@ -55,47 +55,74 @@ pub fn share_from_hex(s: &str) -> Result<Share, ShareCodecError> {
     let mut i = 0usize;
 
     // magic
-    if bytes.len() < i + 4 { return Err(ShareCodecError::Truncated); }
-    if &bytes[i..i + 4] != MAGIC { return Err(ShareCodecError::BadMagic); }
+    if bytes.len() < i + 4 {
+        return Err(ShareCodecError::Truncated);
+    }
+    if &bytes[i..i + 4] != MAGIC {
+        return Err(ShareCodecError::BadMagic);
+    }
     i += 4;
 
     // x
-    if bytes.len() < i + 1 { return Err(ShareCodecError::Truncated); }
-    let x = GF256(bytes[i]); i += 1;
+    if bytes.len() < i + 1 {
+        return Err(ShareCodecError::Truncated);
+    }
+    let x = GF256(bytes[i]);
+    i += 1;
 
     // ecc_len
-    if bytes.len() < i + 1 { return Err(ShareCodecError::Truncated); }
-    let ecc_len = bytes[i] as usize; i += 1;
-    if ecc_len < 2 { return Err(ShareCodecError::Truncated); }
+    if bytes.len() < i + 1 {
+        return Err(ShareCodecError::Truncated);
+    }
+    let ecc_len = bytes[i] as usize;
+    i += 1;
+    if ecc_len < 2 {
+        return Err(ShareCodecError::Truncated);
+    }
 
     // y_len (original, without parity)
-    if bytes.len() < i + 4 { return Err(ShareCodecError::Truncated); }
+    if bytes.len() < i + 4 {
+        return Err(ShareCodecError::Truncated);
+    }
     let y_len = u32::from_le_bytes(bytes[i..i + 4].try_into().unwrap()) as usize;
     i += 4;
 
-    let code_len = y_len.checked_add(ecc_len).ok_or(ShareCodecError::Overflow)?;
-    if bytes.len() < i + code_len { return Err(ShareCodecError::Truncated); }
+    let code_len = y_len
+        .checked_add(ecc_len)
+        .ok_or(ShareCodecError::Overflow)?;
+    if bytes.len() < i + code_len {
+        return Err(ShareCodecError::Truncated);
+    }
 
     // Correct using RS
     let code = Zeroizing::new(bytes[i..i + code_len].to_vec());
     let dec = Decoder::new(ecc_len);
-    let recovered = dec.correct(&code, None).map_err(|_| ShareCodecError::EccDecode)?;
+    let recovered = dec
+        .correct(&code, None)
+        .map_err(|_| ShareCodecError::EccDecode)?;
     let y = recovered.data().to_vec();
-    if y.len() != y_len { return Err(ShareCodecError::EccDecode); }
+    if y.len() != y_len {
+        return Err(ShareCodecError::EccDecode);
+    }
     i += code_len;
 
-    if i != bytes.len() { return Err(ShareCodecError::Truncated); }
+    if i != bytes.len() {
+        return Err(ShareCodecError::Truncated);
+    }
     Ok(Share { x, y })
 }
 
 #[cfg(test)]
 mod ecc_tests {
     use super::*;
-    use crate::{split, Share, GF256};
+    use crate::{GF256, Share, split};
 
     #[test]
     fn shr2_roundtrip_and_correction() {
-        let sh = Share { x: GF256(0x2A), y: b"hello, world!".to_vec() };
+        let sh = Share {
+            x: GF256(0x2A),
+            y: b"hello, world!".to_vec(),
+        };
         let ecc = 16;
         let hex_str = share_to_hex(&sh, ecc);
 
@@ -103,7 +130,7 @@ mod ecc_tests {
         let mut bytes = hex::decode(&hex_str).unwrap();
         // flip a few bytes within the codeword region
         let base = 4 + 1 + 1 + 4; // header size for SHR2
-        bytes[base + 0] ^= 0x55;
+        bytes[base] ^= 0x55;
         bytes[base + 5] ^= 0xAA;
         let corrupted = hex::encode(bytes);
 
